@@ -1,9 +1,7 @@
 from fastapi import FastAPI
 import requests
 from typing import List, Dict
-import openpyxl
 import emoji
-import json
 from unidecode import unidecode
 app = FastAPI()
 prename=""
@@ -218,6 +216,17 @@ productslist=[
         "EN": "Animals - Desert & Ice",
         "DE": "Tiere - Wuste & Eis"
     },
+     {
+        "Brand": "1",
+        "Type": "02",
+        "Number": "018",
+        "SKU": "102018",
+        "FR": "Animaux - Desert et Banquise",
+        "Weight (g)": "150",
+ 
+        "EN": "Animals - Desert & Ice",
+        "DE": "Tiere - Wuste & Eis"
+    },
     {
         "Brand": "1",
         "Type": "02",
@@ -235,6 +244,17 @@ productslist=[
         "Number": "020",
         "SKU": "102020",
         "FR": "Cycle - Eau et Fleur",
+        "Weight (g)": "150",
+ 
+        "EN": "Cycle - Water & Flower",
+        "DE": "Zyklus - Wasser & Blume"
+    },
+     {
+        "Brand": "1",
+        "Type": "02",
+        "Number": "020",
+        "SKU": "102020",
+        "FR": "Cycle Eau et Fleur",
         "Weight (g)": "150",
  
         "EN": "Cycle - Water & Flower",
@@ -345,6 +365,17 @@ productslist=[
         "Number": "001",
         "SKU": "105001",
         "FR": "Cube de rangement",
+        "Weight (g)": "600",
+ 
+        "EN": "Storage cube",
+        "DE": "Kitibook Aufbewahrungsbox"
+    },
+       {
+        "Brand": "1",
+        "Type": "05",
+        "Number": "001",
+        "SKU": "105001",
+        "FR": "Cube de rangement kitibook",
         "Weight (g)": "600",
  
         "EN": "Storage cube",
@@ -679,6 +710,17 @@ productslist=[
  
         "EN": "Z",
         "DE": "Z"
+    },
+     {
+        "Brand": "1",
+        "Type": "04",
+        "Number": "002",
+        "SKU": "104002",
+        "FR": "Boite",
+        "Weight (g)": "250",
+ 
+        "EN": "Box",
+        "DE": "Kasten"
     },]
 def remove_accents(text):
     return unidecode(text)
@@ -692,6 +734,8 @@ def checklangauge(value):
     global checklang
     products=value.upper()
     products_list = products.split(',')
+    products_list = [product.replace("&AMP;", "&").replace("Ö", "O").replace("Ä", "A").replace("Ü", "U") for product in products_list]
+    products_list=[s.strip() for s in products_list]
     first_product = products_list[0]
     if first_product=='TABLE':
         first_product = products_list[1]
@@ -755,10 +799,14 @@ def compare_products(filename, products):
 async def process_data(data: List[Dict]):
     modified_data = []
     totalwieght=0
+
     for d in data:
-        
+     if d["shipping_country"]=="CH":
+        data.remove(d)
+     else:
         d["StoreKey"] = "KITIMIMI"
         d["OrderType"] = "Sell" 
+        d
         full_name = d["shipping_full_name"]  
         first_name, last_name = full_name.split(maxsplit=1) 
         
@@ -929,7 +977,6 @@ async def process_data(data: List[Dict]):
 
     # with open(file_name, "w") as json_file:
     #     json.dump(response_data, json_file)
-
     headers = {
         "Token": "KEy5YrFM3EieHYc+CSoFTZlFBtVonvat" 
     } 
@@ -943,4 +990,65 @@ async def process_data(data: List[Dict]):
     if response.status_code == 200:
         print("Response sent successfully.")
     else:
-        print("Failed to send response. Status code:", response.status_code)
+       print("Failed to send response. Status code:", response.status_code)
+
+@app.get("/get_data")
+async def get_data():
+#     response_data ={
+#    "Header":   {
+#         "Token": "KEy5YrFM3EieHYc+CSoFTZlFBtVonvat" 
+#     },   "Request": 
+#     {
+#         "StoreKey": "KITIMIMI",
+#         "CreatedFromTime":"01/02/2024",
+#         "UpdatedFromTime":"01/02/2024"
+#     }}
+#     api_url = "https://sl.atomicseller.com/Api/Delivery/GetDeliveries"
+#     response = requests.get(
+#         url=api_url,
+#         json=response_data,
+#     )
+#     api_url = " https://kitimimi.com/wp-json/wc-shipment-tracking/v3/orders/57592/shipment-trackings"
+   
+#     data = response.json()
+#     print(data)
+
+    consumer_key = 'ck_e52f312ff798091b0fb498ddb12aea1dfb7f5bc0'
+    consumer_secret = 'cs_7ac5a12e9100834003914596970ba994556afe59'
+    order_id = '57592'
+    url = f'https://kitimimi.com/wp-json/wc-shipment-tracking/v3/orders/{order_id}/shipment-tracking'
+    tracking_data = {
+        "tracking_provider": "DPD France",
+        "tracking_number": "10593007600016",
+        "date_shipped": "2019-04-29",
+        "status_shipped": 1,
+        "replace_tracking": 1
+    }
+
+    # Send the request
+    response = requests.post(url, json=tracking_data, auth=(consumer_key, consumer_secret), headers={'Content-Type': 'application/json'})
+
+    # Check the response
+    if response.status_code == 200:
+        print("Tracking information updated successfully.",response)
+    else:
+        print("Failed to update tracking information. Status code:", response.status_code)
+        print("Response:", response.text)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
