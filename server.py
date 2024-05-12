@@ -23,11 +23,44 @@ productslist=[
         "Type": "02",
         "Number": "001",
         "SKU": "102001",
-        "FR": "Gestes du quotidien",
+        "FR": "Gestes du quotidien 1",
         "Weight (g)": "150",
  
         "EN": "Daily life 1",
         "DE": "Alltag"
+    },
+     {
+        "Brand": "1",
+        "Type": "02",
+        "Number": "001",
+        "SKU": "102001",
+        "FR": "102001 Gestes du quotidien 1",
+        "Weight (g)": "150",
+ 
+        "EN": "102001 Daily life 1",
+        "DE": "102001 Alltag"
+    },
+        {
+        "Brand": "1",
+        "Type": "02",
+        "Number": "001",
+        "SKU": "102001",
+        "FR": "Gestes du quotidien",
+        "Weight (g)": "150",
+ 
+        "EN": "Daily  life 1",
+        "DE": "Alttag"
+    },
+       {
+        "Brand": "1",
+        "Type": "02",
+        "Number": "001",
+        "SKU": "102001",
+        "FR": "102001 Gestes du quotidien",
+        "Weight (g)": "150",
+ 
+        "EN": "102001 Daily  life 1",
+        "DE": "102001 Alttag"
     },
     {
         "Brand": "1",
@@ -62,6 +95,17 @@ productslist=[
         "EN": "Shapes - Colors & Sizes",
         "DE": "FORMEN - FARBEN& GROBEN"
     },
+     {
+        "Brand": "1",
+        "Type": "02",
+        "Number": "004",
+        "SKU": "102004",
+        "FR": "102004 Formes - couleurs et tailles",
+        "Weight (g)": "150",
+ 
+        "EN": "102004 Shapes - Colors & Sizes",
+        "DE": "102004 FORMEN - FARBEN& GROBEN"
+    },
     {
         "Brand": "1",
         "Type": "02",
@@ -72,6 +116,17 @@ productslist=[
  
         "EN": "Count",
         "DE": "Aufzahlung"
+    },
+       {
+        "Brand": "1",
+        "Type": "02",
+        "Number": "005",
+        "SKU": "102005",
+        "FR": "102005 Denombrement",
+        "Weight (g)": "150",
+ 
+        "EN": "102005 Count",
+        "DE": "102005 Aufzahlung"
     },
     {
         "Brand": "1",
@@ -117,6 +172,17 @@ productslist=[
         "EN": "Girl Body Map",
         "DE": "Der Madchenkoper"
     },
+     {
+        "Brand": "1",
+        "Type": "02",
+        "Number": "009",
+        "SKU": "102009",
+        "FR": "102009 Schema corporel fille",
+        "Weight (g)": "150",
+ 
+        "EN": "102009 Girl Body Map",
+        "DE": "Der  Madchenkoper"
+    },
     {
         "Brand": "1",
         "Type": "02",
@@ -159,7 +225,7 @@ productslist=[
         "Weight (g)": "150",
  
         "EN": "Space Frame & Transport",
-        "DE": "Trousse  Rose"
+        "DE": "Raumliches Denken & Verkehr"
     },
     {
         "Brand": "1",
@@ -257,8 +323,8 @@ productslist=[
         "FR": "Cycle Eau et Fleur",
         "Weight (g)": "150",
  
-        "EN": "Cycle - Water & Flower",
-        "DE": "Zyklus - Wasser & Blume"
+        "EN": "Cycle Water & Flower",
+        "DE": "Zyklus Wasser & Blume"
     },
     {
         "Brand": "1",
@@ -335,7 +401,7 @@ productslist=[
         "Weight (g)": "10",
  
         "EN": "Orange Laces",
-        "DE": "Orangefarben"
+        "DE": "Orange"
     },
     {
         "Brand": "1",
@@ -722,6 +788,12 @@ productslist=[
         "EN": "Box",
         "DE": "Kasten"
     },]
+def removeDigits(s):
+    answer = []
+    for char in s:
+        if not char.isdigit():
+            answer.append(char)
+    return ''.join(answer)
 def remove_accents(text):
     return unidecode(text)
 def remove_emoji(string):
@@ -782,14 +854,17 @@ def compare_products(filename, products):
     products_upper = [product.upper() for product in products_list]
     products_upper = [product.replace("&AMP;", "&").replace("Ö", "O").replace("Ä", "A").replace("Ü", "U") for product in products_upper]
     products_upper=[s.strip() for s in products_upper]
+    print("products are",products_upper)
     matched_values = []
     for row in productslist:
-        if checklang=="fr":
+        if checklang == "fr":
             product = row['FR']
-        if checklang=="de":
+        elif checklang == "de":
             product = row['DE']
-        if checklang=="en":
+        elif checklang == "en":
             product = row['EN']
+        else:
+            product = row['FR']
         product_upper = product.upper()
         for pro in products_upper:
             if pro==product_upper:
@@ -840,7 +915,7 @@ async def process_data(data: List[Dict]):
                     break
             for key, value in product.items():
                 value = remove_accents(value)
-                if value is not None and value != '':
+                if value is not None and value != '' and key!="Ref":
                     value_without_emojis = remove_emoji(value)
                     if key == "Prénom":
                         prénom_encountered = True
@@ -871,12 +946,14 @@ async def process_data(data: List[Dict]):
             result.append(','.join(processed_values))
             final_result = ','.join(result)
             checking=compare_products("./list.xlsx",final_result)
+            print("checking",checking)
             result=[]
             for item in checking:
                 sku =item['SKU'] 
                 quantity = 1  # Quantity is the sixth element
                 weight = int( item['Weight (g)'] )   # Weight is the seventh element, if None, make it empty
                 ProductName=item['FR']  
+                ProductName=removeDigits(ProductName)
                 totalwieght=weight+totalwieght
                 if sku not in formatted_data:
                     formatted_data[sku] = {
@@ -971,10 +1048,9 @@ async def process_data(data: List[Dict]):
     response_data ={
         "Request": 
     {
-        "Orders": modified_data
+        "Orders": modified_data,
     }}
     # file_name = "response_data.json"
-
     # with open(file_name, "w") as json_file:
     #     json.dump(response_data, json_file)
     headers = {
@@ -984,7 +1060,7 @@ async def process_data(data: List[Dict]):
     response = requests.post(
         url=api_url,
         json=response_data,
-        headers=headers
+        headers=headers,
     )
 
     if response.status_code == 200:
