@@ -3211,20 +3211,20 @@ async def process_data(data: List[Dict]):
     #     json.dump(response_data, json_file)
     
    
-    # headers = {
-    #     "Token": "KEy5YrFM3EieHYc+CSoFTZlFBtVonvat" 
-    # } 
-    # api_url = "https://sl.atomicseller.com/Api/Order/CreateOrders"
-    # response = requests.post(
-    #     url=api_url,
-    #     json=response_data,
-    #     headers=headers,
-    # )
+    headers = {
+        "Token": "KEy5YrFM3EieHYc+CSoFTZlFBtVonvat" 
+    } 
+    api_url = "https://sl.atomicseller.com/Api/Order/CreateOrders"
+    response = requests.post(
+        url=api_url,
+        json=response_data,
+        headers=headers,
+    )
 
-    # if response.status_code == 200:
-    #     print("Response sent successfully.")
-    # else:
-    #    print("Failed to send response. Status code:", response.status_code)
+    if response.status_code == 200:
+        print("Response sent successfully.")
+    else:
+       print("Failed to send response. Status code:", response.status_code)
 
 @app.get("/get_data")
 async def get_data():
