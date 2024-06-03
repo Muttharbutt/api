@@ -4,6 +4,7 @@ from fastapi import FastAPI
 import requests
 from typing import List, Dict
 import emoji
+from datetime import datetime
 from unidecode import unidecode
 app = FastAPI()
 prename=""
@@ -2975,7 +2976,13 @@ def process_value(key, value, prénom_encountered):
             return process_prénom(value)  
     else:
         return value
-
+def transform_number_in_string(input_string):
+    parts = input_string.split()
+    if len(parts) >= 2:
+        modified_number = parts[1].replace('0', '/')
+        modified_string = f"{parts[0]} {modified_number} {' '.join(parts[2:])}"
+        return modified_string
+    return input_string
 def compare_products( products):
     products_list = products.split(',')
     products_upper = [product.upper() for product in products_list]
@@ -2986,10 +2993,11 @@ def compare_products( products):
     type_1 = []
     type_2 = []
     type_3 = []
-
+    type_4 = []
     # Regular expressions for matching
     regex_type_2 = re.compile(r'^\d{6} /[0-9]+ .+')
     regex_type_3 = re.compile(r'^\d{6} .+')
+    regex_type_4 = re.compile(r'^\d{6} \d{2} .+')
 
     # Categorize each string into one of the three types
     for string in products_upper:
@@ -2997,9 +3005,15 @@ def compare_products( products):
             type_1.append(string)
         elif regex_type_2.match(string):
             type_2.append(string)
+        elif regex_type_4.match(string):  # Check for the new type first
+            string=transform_number_in_string(string)
+            type_2.append(string)
         elif regex_type_3.match(string):
             type_3.append(string)
+        
+    print(type_1,type_2,type_3,type_4)
     number_parts = [item.split()[0] for item in type_3]
+    
     number_and_identifiers_no_space = [item.split()[0] + item.split()[1] for item in type_2]
     for row in productslist['Products']:
         product = row['SKU']
@@ -3033,10 +3047,7 @@ async def process_data(data: List[Dict]):
     totalwieght=0
 
     for d in data:
-     if d["shipping_country"]=="CH":
-        print( d["shipping_country"])
-        data.remove(d)
-     else:
+ 
         d["StoreKey"] = "KITIMIMI"
         d["OrderType"] = "Sell" 
         full_name = d["shipping_full_name"]  
@@ -3205,12 +3216,10 @@ async def process_data(data: List[Dict]):
     {
         "Orders": modified_data,
     }}
-    print(response_data)
     # file_name = "response_data.json"
     # with open(file_name, "w") as json_file:
     #     json.dump(response_data, json_file)
     
-   
     headers = {
         "Token": "KEy5YrFM3EieHYc+CSoFTZlFBtVonvat" 
     } 
@@ -3228,46 +3237,62 @@ async def process_data(data: List[Dict]):
 
 @app.get("/get_data")
 async def get_data():
-#     response_data ={
-#    "Header":   {
-#         "Token": "KEy5YrFM3EieHYc+CSoFTZlFBtVonvat" 
-#     },   "Request": 
-#     {
-#         "StoreKey": "KITIMIMI",
-#         "CreatedFromTime":"01/02/2024",
-#         "UpdatedFromTime":"01/02/2024"
-#     }}
-#     api_url = "https://sl.atomicseller.com/Api/Delivery/GetDeliveries"
-#     response = requests.get(
-#         url=api_url,
-#         json=response_data,
-#     )
-#     api_url = " https://kitimimi.com/wp-json/wc-shipment-tracking/v3/orders/57592/shipment-trackings"
+    today_date = datetime.now().strftime("%d/%m/%Y")
+    response_data ={
+   "Header":   {
+        "Token": "KEy5YrFM3EieHYc+CSoFTZlFBtVonvat" 
+    },   "Request": 
+    {
+        "StoreKey": "KITIMIMI",
+        "CreatedFromTime":"20/05/2024",
+        "UpdatedFromTime":"20/05/2024"
+    }}
+    api_url = "https://sl.atomicseller.com/Api/Delivery/GetDeliveries"
+    response = requests.get(
+        url=api_url,
+        json=response_data,
+    )
+    api_url = " https://kitimimi.com/wp-json/wc-shipment-tracking/v3/orders/57592/shipment-trackings"
    
-#     data = response.json()
-#     print(data)
+    data = response.json()
+    with open('data.json', 'w') as json_file:
+        json.dump(data, json_file, indent=4)
 
-    consumer_key = 'ck_e52f312ff798091b0fb498ddb12aea1dfb7f5bc0'
-    consumer_secret = 'cs_7ac5a12e9100834003914596970ba994556afe59'
-    order_id = '57592'
-    url = f'https://kitimimi.com/wp-json/wc-shipment-tracking/v3/orders/{order_id}/shipment-tracking'
-    tracking_data = {
-        "tracking_provider": "DPD France",
-        "tracking_number": "10593007600016",
-        "date_shipped": "2019-04-29",
-        "status_shipped": 1,
-        "replace_tracking": 1
-    }
+    for key in data['Response']['Deliveries']:
+        print(key['Delivery']['TrackingNumber'])
+    # url = "https://kitimimi.com/wp-json/wc-shipment-tracking/v3/orders/57592/shipment-trackings"
 
-    # Send the request
-    response = requests.post(url, json=tracking_data, auth=(consumer_key, consumer_secret), headers={'Content-Type': 'application/json'})
+    # payload = ""
+    # headers = {
+    # 'Authorization': 'Basic Y2tfNDVjNTRiMmFkZjNjNjNlNTIwNjBkM2ZmY2E1NDFkZTg4YjcxYjc5Yjpjc18yZjQ4NDZiNTBhYzVmNmZlNjk3OGNjMzllMTcyNDRjODRhYTVkZmFi',
+    # 'Cookie': 'aelia_cs_selected_currency=EUR; aelia_customer_country=PK; wfwaf-authcookie-6f4abdd7a72b5bd7453008536b22a4ea=1%7Cadministrator%7Cmanage_options%2Cunfiltered_html%2Cedit_others_posts%2Cupload_files%2Cpublish_posts%2Cedit_posts%2Cread%2Cmanage_network%7Cd2272d76759d97df144fcb2810f0342fa6a6c498ae165e61484e709b25407963; wp-wpml_current_admin_language_d41d8cd98f00b204e9800998ecf8427e=en'
+    # }
 
-    # Check the response
-    if response.status_code == 200:
-        print("Tracking information updated successfully.",response)
-    else:
-        print("Failed to update tracking information. Status code:", response.status_code)
-        print("Response:", response.text)
+    # response = requests.request("GET", url, headers=headers, data=payload)
+
+    # print(response.text)
+
+    # consumer_key = 'ck_e52f312ff798091b0fb498ddb12aea1dfb7f5bc0'
+    # consumer_secret = 'cs_7ac5a12e9100834003914596970ba994556afe59'
+    # order_id = '57592'
+    # url = f'https://kitimimi.com/wp-json/wc-shipment-tracking/v3/orders/{order_id}/shipment-tracking'
+    # tracking_data = {
+    #     "tracking_provider": "DPD France",
+    #     "tracking_number": "10593007600016",
+    #     "date_shipped": "2019-04-29",
+    #     "status_shipped": 1,
+    #     "replace_tracking": 1
+    # }
+
+    # # Send the request
+    # response = requests.post(url, json=tracking_data, auth=(consumer_key, consumer_secret), headers={'Content-Type': 'application/json'})
+
+    # # Check the response
+    # if response.status_code == 200:
+    #     print("Tracking information updated successfully.",response)
+    # else:
+    #     print("Failed to update tracking information. Status code:", response.status_code)
+    #     print("Response:", response.text)
 
 
 
