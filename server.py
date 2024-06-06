@@ -1,10 +1,12 @@
 import json
 import re
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 import requests
 from typing import List, Dict
 import emoji
-from datetime import datetime
+from datetime import date, datetime
+from pydantic import BaseModel
+from typing import Dict
 from unidecode import unidecode
 app = FastAPI()
 prename=""
@@ -3235,42 +3237,54 @@ async def process_data(data: List[Dict]):
     else:
        print("Failed to send response. Status code:", response.status_code)
 
-@app.get("/get_data")
-async def get_data():
-    today_date = datetime.now().strftime("%d/%m/%Y")
+@app.post("/get_data")
+async def get_data(dates:Request):
+    request_data = await dates.json()
+    # Extract start_date and end_date from the request body
+    start_date = request_data.get("start_date")
+    end_date = request_data.get("end_date")
     response_data ={
    "Header":   {
         "Token": "KEy5YrFM3EieHYc+CSoFTZlFBtVonvat" 
     },   "Request": 
     {
         "StoreKey": "KITIMIMI",
-        "CreatedFromTime":"20/05/2024",
-        "UpdatedFromTime":"20/05/2024"
+        "CreatedFromTime":start_date,
+        "UpdatedFromTime":end_date
     }}
     api_url = "https://sl.atomicseller.com/Api/Delivery/GetDeliveries"
     response = requests.get(
         url=api_url,
         json=response_data,
     )
-    api_url = " https://kitimimi.com/wp-json/wc-shipment-tracking/v3/orders/57592/shipment-trackings"
-   
+
     data = response.json()
-    with open('data.json', 'w') as json_file:
-        json.dump(data, json_file, indent=4)
+    # with open('data.json', 'w') as json_file:
+    #     json.dump(data, json_file, indent=4)
 
     for key in data['Response']['Deliveries']:
         print(key['Delivery']['TrackingNumber'])
-    # url = "https://kitimimi.com/wp-json/wc-shipment-tracking/v3/orders/57592/shipment-trackings"
+        print(key['Order']['OrderKey'])
+        if key['Delivery']['TrackingNumber']!='':
+            order={key['Order']['OrderKey']}
+            string = order.pop()
+            last_five_chars = string[-5:]
+            url = f"https://kitimimi.com/wp-json/wc-shipment-tracking/v3/orders/{last_five_chars}/shipment-trackings"
 
-    # payload = ""
-    # headers = {
-    # 'Authorization': 'Basic Y2tfNDVjNTRiMmFkZjNjNjNlNTIwNjBkM2ZmY2E1NDFkZTg4YjcxYjc5Yjpjc18yZjQ4NDZiNTBhYzVmNmZlNjk3OGNjMzllMTcyNDRjODRhYTVkZmFi',
-    # 'Cookie': 'aelia_cs_selected_currency=EUR; aelia_customer_country=PK; wfwaf-authcookie-6f4abdd7a72b5bd7453008536b22a4ea=1%7Cadministrator%7Cmanage_options%2Cunfiltered_html%2Cedit_others_posts%2Cupload_files%2Cpublish_posts%2Cedit_posts%2Cread%2Cmanage_network%7Cd2272d76759d97df144fcb2810f0342fa6a6c498ae165e61484e709b25407963; wp-wpml_current_admin_language_d41d8cd98f00b204e9800998ecf8427e=en'
-    # }
+            payload ={
+            "tracking_provider": "DPD France",
+            "tracking_number": key['Delivery']['TrackingNumber'],
+            "status_shipped": 1,
+            "replace_tracking": 1
+        }
+            headers = {
+            'Authorization': 'Basic Y2tfNDVjNTRiMmFkZjNjNjNlNTIwNjBkM2ZmY2E1NDFkZTg4YjcxYjc5Yjpjc18yZjQ4NDZiNTBhYzVmNmZlNjk3OGNjMzllMTcyNDRjODRhYTVkZmFi',
+            'Cookie': 'aelia_cs_selected_currency=EUR; aelia_customer_country=PK; wfwaf-authcookie-6f4abdd7a72b5bd7453008536b22a4ea=1%7Cadministrator%7Cmanage_options%2Cunfiltered_html%2Cedit_others_posts%2Cupload_files%2Cpublish_posts%2Cedit_posts%2Cread%2Cmanage_network%7Cd2272d76759d97df144fcb2810f0342fa6a6c498ae165e61484e709b25407963; wp-wpml_current_admin_language_d41d8cd98f00b204e9800998ecf8427e=en'
+            }
 
-    # response = requests.request("GET", url, headers=headers, data=payload)
+            response = requests.request("GET", url, headers=headers, data=payload)
 
-    # print(response.text)
+            print(response.text)
 
     # consumer_key = 'ck_e52f312ff798091b0fb498ddb12aea1dfb7f5bc0'
     # consumer_secret = 'cs_7ac5a12e9100834003914596970ba994556afe59'
