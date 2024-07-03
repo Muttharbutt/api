@@ -1,8 +1,9 @@
 import requests
 from datetime import datetime, timedelta
 def call_fastapi_endpoint():
-    end_date = datetime.now().date()
-    start_date = end_date - timedelta(days=1)
+    date=datetime.now().date()
+    end_date = date - timedelta(days=1)
+    start_date = date - timedelta(days=1)
     url = "http://51.89.116.169/get_data"
     payload = {
     "start_date": start_date.strftime('%Y-%m-%d'),

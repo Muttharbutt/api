@@ -3261,7 +3261,7 @@ async def get_data(dates:Request):
     data = response.json()
     # with open('data.json', 'w') as json_file:
     #     json.dump(data, json_file, indent=4)
-
+    # print(data)
     for key in data['Response']['Deliveries']:
         print(key['Delivery']['TrackingNumber'])
         print(key['Order']['OrderKey'])
@@ -3270,7 +3270,7 @@ async def get_data(dates:Request):
             string = order.pop()
             last_five_chars = string[-5:]
             url = f"https://kitimimi.com/wp-json/wc-shipment-tracking/v3/orders/{last_five_chars}/shipment-trackings"
-
+            print(last_five_chars)
             payload ={
             "tracking_provider": "DPD France",
             "tracking_number": key['Delivery']['TrackingNumber'],
@@ -3281,8 +3281,7 @@ async def get_data(dates:Request):
             'Authorization': 'Basic Y2tfNDVjNTRiMmFkZjNjNjNlNTIwNjBkM2ZmY2E1NDFkZTg4YjcxYjc5Yjpjc18yZjQ4NDZiNTBhYzVmNmZlNjk3OGNjMzllMTcyNDRjODRhYTVkZmFi',
             'Cookie': 'aelia_cs_selected_currency=EUR; aelia_customer_country=PK; wfwaf-authcookie-6f4abdd7a72b5bd7453008536b22a4ea=1%7Cadministrator%7Cmanage_options%2Cunfiltered_html%2Cedit_others_posts%2Cupload_files%2Cpublish_posts%2Cedit_posts%2Cread%2Cmanage_network%7Cd2272d76759d97df144fcb2810f0342fa6a6c498ae165e61484e709b25407963; wp-wpml_current_admin_language_d41d8cd98f00b204e9800998ecf8427e=en'
             }
-
-            response = requests.request("GET", url, headers=headers, data=payload)
+            response = requests.request("POST", url, headers=headers, data=payload)
 
             print(response.text)
 
